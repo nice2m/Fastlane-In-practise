@@ -1,26 +1,22 @@
 #
-#   功能描述：基于fastlane，配置Xcode 多target，提供选择target，自动打包上传到蒲公英，且钉钉通知@对应的人员；
-#           也可打包出上传AppStore 的包，可直接使用AppLoader 或 Transporter 上传.iap 文件
-#
-
-#
 #
 #
 #   一、工具环境说明：
-#   fastlane 2.145.0 
+#   fastlane 2.167.0
 #   fastlane-plugin-pgyer，0.2.2
 #
 #   二、Xcode配置说明：
-#   多Target 环境变量配置：各个Target对应一个 PreprocessorMacros (Objc),或者 Other Swift Flags 新增一个 -D kEnvironment_xxx (swift)
-#   证书&描述文件配置：配置对应的Provisioning Profiles 且下载到本地，双击导入到Xcode
-#   Xcode 配置：
-#   Signing & Capabilities：去掉自动管理，注意 "Sign & Capabilities 下的 All,Debug,Release 选项栏 都要去掉自动管理证书勾选"
+#   多Target 环境变量配置：各个Target对应一个 PreprocessorMacros (Objc)eg: kEnvironmentDebug,kEnvironmentRelease,或者 Other Swift Flags 新增一个 -D kEnvironment_xxx (swift),eg:kEnvironment_debug,kEnvironment_release
+#   证书&描述文件配置：配置对应的Provisioning Profiles 且下载到本地，双击导入，一般Xcode会导入到对应目录.
+#             注意1：一旦项工程的Capabilities 改变了，或者entitlments 文件，请注意排查ProvisioningProfiles 是否有效；否则可能打包错误
+#     
 #
-#   三、当前脚本配置
+#   三、当前脚本需要配置
 #   1.第三方APIKEY，TOKEN 配置 .etc
-#   2.搜索【配置】 对应配置
 #
 #
+#
+
 
 # 默认平台配置为iOS
 default_platform(:ios)
@@ -34,76 +30,60 @@ require 'json'
 platform :ios do
 
 # 配置开始======================================================================================================
-# 蒲公英测试APIKEY
-__PGY_API_KEY = "【配置】"
-# 蒲公英测试USERKEY
-__PGY_USER_KEY = "【配置】"
-# 蒲公英下载页面地址，在钉钉的通知消息中跳转使用
-__PGY_DOWN_LOAD_PAGE_URL = "【配置】"
-# 蒲公英APP 图标地址，在钉钉的通知消息中展示使用
-__PGY_APP_ICON_URL = "【配置】"
 
-# 钉钉配置参考https://ding-doc.dingtalk.com/doc#/serverapi2/qf2nxq/9e91d73c
-# 钉钉WebHook 通知机器人  kk2.0  xdc
-# 钉钉 webhook 接口token
-__DING_TALK_TOKEN = "https://oapi.dingtalk.com/robot/send?access_token=【配置】"
-__DING_TALK_AT_MOBILES = ["【配置】","【配置】"]
-__DING_TALK_AT_TEXT = "更新前请删除旧包"
-# 钉钉通知各个Target 内容对应描述
-# 对应 __ARCHIVE_TARGET_LIST内的数据
-__ARCHIVE_DING_TALK_MSG_CONFIG = {
-"KYD_local" => "内测版 本地开发机",
-"KYD_dev" => "内测版 开发服务器",
-"KYD_test" => "内测版 测试60服务器",
-"KYD_pre" => "内测版 预发布39服务器",
-"KYD_release" => "内测版 正式服"
-}
+  # 蒲公英测试APIKEY 参数配置
+  __PGY_API_KEY = "【配置】"
+  # 蒲公英测试USERKEY
+  __PGY_USER_KEY = "【配置】"
 
-# Xcode 配置
-# XCode 签名证书名称  xcodebuild --help search for keyword "installerSigningCertificate" mac app only
-# eg: Apple Distribution: Chengdu xxx Co., Ltd.
-# __XCODE_SIGNING_CERTIFICATE_INSTALLER_NAME = "【配置】"
-# Xcode 签名证书名称 xcodebuild --help search for keyword "signingCertificate"
-# eg: Apple Distribution: Chengdu xxx Co., Ltd.
-__XCODE_SIGNING_CERTIFICATE_NAME = "【配置】"
-# Xcode 编译SDK xcodebuild --help search for keyword "-sdk"
-__XCODE_SDK = "iOS 13.1"
-# 开发者账号TeamID
-# eg: "2D3U254JQ6"
-__XCODE_SIGNING_TEAM_ID = "【配置】"
-# XCode 项目文件名
-# eg: xxx.xcodeproj
-__XCODE_PROJECT_FILE_NAME = "【配置】"
-# XCode 项目工作区文件名
-#eg: xxx.xcworkspace
-__XCODE_WORKSPACE_FILE_NAME = "【配置】"
-# Xcode 打包基础输出路径,相对于.xcworkspace 文件路径
-#eg: ./../archives/KYD/
-__ARCHIVE_BASE_DIR  = "【配置】"
-# 打包 target List 列表，选择，便于多环境配置
-#eg: ["KYD_local","KYD_dev","KYD_test","KYD_pre","KYD_release"]
-__ARCHIVE_TARGET_LIST = 【配置】
-# XCode provisioningProfiles 打包描述文件
-#eg:  
-# {
-#  "com.tckk.kuaiyidian" => "kyd_appstore_20200424"
-# }
-#
-__XCODE_ADHOC_PROVISIONINGPROFILES_CONFIG = 【配置】
-# 打正式包，AppStore 提审包 ，release_pack lane 的打包描述文件
-#eg:  
-# {
-#  "com.tckk.kuaiyidian" => "kyd_appstore_20200424"
-# }
-__XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
-# 配置结束======================================================================================================
+  # 钉钉 webhook 接口token参数配置
+  # 钉钉配置参考https://ding-doc.dingtalk.com/doc#/serverapi2/qf2nxq/9e91d73c
+  # 钉钉WebHook 通知机器人 
+  __DING_TALK_TOKEN = "https://oapi.dingtalk.com/robot/send?access_token=【配置】"
+  # 钉钉要At 的手机号码，支持数组，目前订单的At 功能无法按照列表中的顺序At,bug;
+  __DING_TALK_AT_MOBILES = ["【配置】","【配置】"]
+  # 钉钉At 消息头1
+  __DING_TALK_AT_TEXT = "更新前尽量删除旧包；【配置】"
+  # 钉钉通知各个Target 内容对应描述
+  # eg:
+  #__ARCHIVE_DING_TALK_MSG_CONFIG = {
+  #  "Scheme-local" => "内部分发，本地开发机",
+  #  "Scheme-test" => "内部分发，测试版",
+  #  "Scheme-prd" => "AppStore，提审版"
+  #}
 
-  desc 'adhoc 打包到蒲公英，并发送钉钉通知'
-  lane :adhoc_pgyer do
+  # Xcode 参数配置
+  # Xcode 签名证书名称 xcodebuild --help search for keyword "signingCertificate"
+  __XCODE_SIGNING_CERTIFICATE_NAME = "Apple Distribution: Chengdu *** Information Technology Co., Ltd."
+  # Xcode 编译SDK xcodebuild --help search for keyword "-sdk"
+  __XCODE_SDK = "【配置】"
+  # 开发者账号TeamID
+  __XCODE_SIGNING_TEAM_ID = "【配置】"
+  # XCode 项目文件名
+  __XCODE_PROJECT_FILE_NAME = "【配置】.xcodeproj"
+  # XCode 项目工作区文件名
+  __XCODE_WORKSPACE_FILE_NAME = "【配置】.xcworkspace"
+  # Xcode 打包基础输出路径,相对于.workspace 文件
+  __ARCHIVE_BASE_DIR  = "【配置】"
+  # 打包 target List 列表
+  __ARCHIVE_TARGET_LIST = ["Scheme_local","Scheme_test","Scheme_release"]
+  # XCode provisioningProfiles 打包描述文件
+  __XCODE_ADHOC_PROVISIONINGPROFILES_CONFIG = { 
+            "com.***.**" => "***_adhoc_20200616",
+            "com.***.**.extension" => "***_ext_adhoc_20200616"
+            }
+  __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = {
+            "com.***.**" => "***_appstore_20200616",
+            "com.***.**.extension" => "***_ext_appstore_20200616"
+            }
+  # 配置结束======================================================================================================
+
+  desc 'adhoc 打包到蒲公英，并发送钉钉通知，用于测试，验收等'
+  lane :adhoc_pgy do
 
       # 1.用户交互
       __INPUT_SCHEME = UI.select("请选择打包Target:", __ARCHIVE_TARGET_LIST)
-      __INPUT_PGY_RELEASE_NOTE = UI.input("请输入更新日志:")
+      __INPUT_PGY_RELEASE_NOTE = __ARCHIVE_DING_TALK_MSG_CONFIG["#{__INPUT_SCHEME}"]
 
       # 增加内部版本号
       increment_build_number(xcodeproj: __XCODE_PROJECT_FILE_NAME)
@@ -131,9 +111,10 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
         scheme: __INPUT_SCHEME,
         silent: false,
         clean: true,
+        skip_profile_detection: true,
         output_directory: __ARCHIVE_DIR, # Destination directory. Defaults to current directory.
-        output_name: __IAP_FILE_NAME,    # specify the name of the .ipa file to generate (including file extension)
-        sdk: __XCODE_SDK,       
+        output_name: __IAP_FILE_NAME,       # specify the name of the .ipa file to generate (including file extension)
+        sdk: __XCODE_SDK,       # use SDK as the name or path of the base SDK when building the project.
         include_symbols: false,
         include_bitcode: false,
         archive_path: __ARCHIVE_FILE_PATH,
@@ -161,13 +142,21 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
       app_version = get_ipa_info_plist_value(ipa: app_patch, key: "CFBundleShortVersionString")
       app_build_version = get_ipa_info_plist_value(ipa: app_patch, key: "CFBundleVersion")
       app_name = get_ipa_info_plist_value(ipa: app_patch, key: "CFBundleDisplayName")
-      app_url = __PGY_DOWN_LOAD_PAGE_URL
-      app_icon = __PGY_APP_ICON_URL
+
+      # pgyer_v2 插件生成的文件内容，得到图标，下载地址
+      pgyer_upload_note_file_name = "./pgyer_upload_note_file.txt"
+      pgyer_note_content = IO.read(pgyer_upload_note_file_name)
+      notes_info_list = pgyer_note_content.split(" ")
+      
+      app_down_load_url = notes_info_list[0]
+      app_icon_url = notes_info_list[2]
+
+      app_url = app_down_load_url
+      app_icon = app_icon_url
       dingTalk_url = __DING_TALK_TOKEN
       dingTalk_mardown_title_des = __ARCHIVE_DING_TALK_MSG_CONFIG["#{__INPUT_SCHEME}"]
 
-      markdown = 
-      {
+      markdown = {
         msgtype: "link", 
         link: {
             text: "已经更新啦，快来试试吧!", 
@@ -185,11 +174,10 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
       request.body = markdown.to_json
 
       response = https.request(request)
-      puts "------------------------------"
-      puts "Response #{response.code} #{response.message}: #{response.body}"
+      puts "通知1 发送完成 #{response.code} #{response.message}: #{response.body}"
+
       #钉钉机器人2
-      dingTalk_at_msg = 
-      {
+      dingTalk_at_msg = {
         msgtype: "text", 
         text: {
             content:__DING_TALK_AT_TEXT
@@ -201,16 +189,18 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
       }
       request.body = dingTalk_at_msg.to_json
       response2 = https.request(request)
-      puts "Response #{response2.code} #{response2.message}: #{response2.body}"
+      puts "通知2 发送完成 #{response2.code} #{response2.message}: #{response2.body}"
   end
 
-  desc '打AppStore 提交审核包'
-  lane :release_pack do
+  desc 'adhoc 打包到蒲公英，不发送钉钉通知，用于测试，验收'
+  lane :adhoc_pgy_no_ding do
 
       # 1.用户交互
-      __INPUT_SCHEME = "KYD_release"
+      __INPUT_SCHEME = UI.select("请选择打包Target:", __ARCHIVE_TARGET_LIST)
+      #__INPUT_PGY_RELEASE_NOTE = UI.input("请输入更新日志:")
+      __INPUT_PGY_RELEASE_NOTE = __ARCHIVE_DING_TALK_MSG_CONFIG["#{__INPUT_SCHEME}"]
 
-        # 增加内部版本号
+      # 增加内部版本号
       increment_build_number(xcodeproj: __XCODE_PROJECT_FILE_NAME)
       #获取最新版本号，生成输出文件的主文件名
       __VERSION_NUMBER = get_version_number(
@@ -219,10 +209,10 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
       )
       __BUILD_NUMBER = get_build_number(xcodeproj: __XCODE_PROJECT_FILE_NAME)
 
-      # 2.打包变量
+      # 2.打包环境变量
       # 打包输出路径
       __ARCHIVE_DIR = __ARCHIVE_BASE_DIR + __INPUT_SCHEME + "/"
-      # 打包输出主文件名
+      # 文件名时间戳
       __OUTPUT_FILE_MAIN_NAME = __INPUT_SCHEME + "_v" +__VERSION_NUMBER + "_b" + __BUILD_NUMBER
       # 打包文件IPA名称
       __IAP_FILE_NAME = __OUTPUT_FILE_MAIN_NAME + ".ipa"
@@ -236,6 +226,65 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
         scheme: __INPUT_SCHEME,
         silent: false,
         clean: true,
+        skip_profile_detection: true,
+        output_directory: __ARCHIVE_DIR, # Destination directory. Defaults to current directory.
+        output_name: __IAP_FILE_NAME,       # specify the name of the .ipa file to generate (including file extension)
+        sdk: __XCODE_SDK,       # use SDK as the name or path of the base SDK when building the project.
+        include_symbols: false,
+        include_bitcode: false,
+        archive_path: __ARCHIVE_FILE_PATH,
+        export_options: {
+          destination: "export",
+          compileBitcode: false,
+          uploadBitcode: false,
+          method: "ad-hoc",
+          signingStyle: "manual",
+          teamID: __XCODE_SIGNING_TEAM_ID,
+          signingCertificate: __XCODE_SIGNING_CERTIFICATE_NAME,
+          provisioningProfiles: __XCODE_ADHOC_PROVISIONINGPROFILES_CONFIG}
+      )
+
+      # 4.上传蒲公英
+      pgyer(
+          api_key: __PGY_API_KEY, 
+          user_key: __PGY_USER_KEY,
+          update_description: __INPUT_PGY_RELEASE_NOTE
+      )
+  end
+
+  desc '打AppStore 提交审核包，用于提交AppStore'
+  lane :release_pack do
+
+      # 1.用户交互
+      __INPUT_SCHEME = "Scheme_release"
+
+      # 增加内部版本号
+      increment_build_number(xcodeproj: __XCODE_PROJECT_FILE_NAME)
+      #获取最新版本号，生成输出文件的主文件名
+      __VERSION_NUMBER = get_version_number(
+        xcodeproj: __XCODE_PROJECT_FILE_NAME,
+        target: __INPUT_SCHEME
+      )
+      __BUILD_NUMBER = get_build_number(xcodeproj: __XCODE_PROJECT_FILE_NAME)
+
+      # 2.打包环境变量
+      # 打包输出路径
+      __ARCHIVE_DIR = __ARCHIVE_BASE_DIR + __INPUT_SCHEME + "/"
+      # 文件名时间戳
+      __OUTPUT_FILE_MAIN_NAME = __INPUT_SCHEME + "_v" +__VERSION_NUMBER + "_b" + __BUILD_NUMBER
+      # 打包文件IPA名称
+      __IAP_FILE_NAME = __OUTPUT_FILE_MAIN_NAME + ".ipa"
+      # 打包文件.xcarchive 输出路径
+      __ARCHIVE_FILE_PATH = __ARCHIVE_DIR + __OUTPUT_FILE_MAIN_NAME + ".xcarchive"
+
+      # 3.打包开始
+      gym(
+        workspace: __XCODE_WORKSPACE_FILE_NAME,
+        configuration: "Release",
+        scheme: __INPUT_SCHEME,
+        silent: false,
+        clean: true,
+        skip_profile_detection: true,
         output_directory: __ARCHIVE_DIR, # Destination directory. Defaults to current directory.
         output_name: __IAP_FILE_NAME,       # specify the name of the .ipa file to generate (including file extension)
         sdk: __XCODE_SDK,       # use SDK as the name or path of the base SDK when building the project.
@@ -252,7 +301,7 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
           signingCertificate: __XCODE_SIGNING_CERTIFICATE_NAME,
           provisioningProfiles: __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG}
       )
-
+      
       # 4.通过Finder打开当前打好包的目录
       #首先回到项目文件所在目录
       Dir.chdir("./..") do
@@ -260,5 +309,5 @@ __XCODE_RELEASE_PROVISIONINGPROFILES_CONFIG = 【配置】
         sh("open #{__ARCHIVE_DIR}")
       end
   end
-
+  
 end
