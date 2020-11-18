@@ -8,7 +8,7 @@
 #   二、Xcode配置说明：
 #   多Target 环境变量配置：各个Target对应一个 PreprocessorMacros (Objc)eg: kEnvironmentDebug,kEnvironmentRelease,或者 Other Swift Flags 新增一个 -D kEnvironment_xxx (swift),eg:kEnvironment_debug,kEnvironment_release
 #   证书&描述文件配置：配置对应的Provisioning Profiles 且下载到本地，双击导入，一般Xcode会导入到对应目录.
-#             注意1：一旦项工程的Capabilities 改变了，或者entitlments 文件，请注意排查ProvisioningProfiles 是否有效；否则可能打包错误
+#             注意1：一旦工程的Capabilities 改变了,比如去掉或更改推送，或者entitlments 文件，请注意排查ProvisioningProfiles 是否有效；否则可能打包错误
 #     
 #
 #   三、当前脚本需要配置
